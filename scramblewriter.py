@@ -133,8 +133,6 @@ class MessageDisplayer(QScrollArea):
         self.setWidget(self.displayer)
         self.setWidgetResizable(True)
 
-        self.msg_labels = []
-
         self.speed = speed
         self.delay = delay
 
@@ -145,7 +143,6 @@ class MessageDisplayer(QScrollArea):
 
     def insert_message(self, text):
         label = MessageLabel(text, speed=self.speed, delay=self.delay, parent=self)
-        self.msg_labels.append(label)
         self.layout.addWidget(label)
         label.toggle_anim(True)
 
@@ -156,6 +153,7 @@ class MessageInput(QWidget):
         super().__init__(parent=parent)
 
         self.layout = QHBoxLayout(self)
+        self.layout.setSpacing(0)
 
         self.prefix_label = QLabel('>', self)
         self.msg_input = QLineEdit(self)
@@ -165,7 +163,7 @@ class MessageInput(QWidget):
         self.msg_input.editingFinished.connect(self.send_message)
 
         self.setStyleSheet("""
-                        border: 1px solid white;
+                        border-top: 1px solid white;
                         color: rgb(0, 255, 0);                        
                         """)
 
