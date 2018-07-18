@@ -316,7 +316,7 @@ if __name__ == "__main__":
     if len(input_param) < 2:
         input_param.append('20')
     if len(input_param) < 3:
-        input_param.append('-1')
+        input_param.append('20')
     print('Speed Per Char: {:s}ms\nNumber of Garbage: {:s}'.format(*input_param[1:]))
 
     # Create the animated printer and start the animation
