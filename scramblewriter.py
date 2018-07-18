@@ -10,7 +10,7 @@ python3 scramblewriter.py <filename> <speed> <delay>
 """
 
 from PyQt5.Qt import QApplication
-from PyQt5.QtWidgets import (QLabel, QVBoxLayout, QWidget, QScrollArea, QLineEdit, QSizePolicy)
+from PyQt5.QtWidgets import (QLabel, QVBoxLayout, QWidget, QScrollArea, QLineEdit, QHBoxLayout)
 from PyQt5.QtCore import (QAbstractAnimation, QPropertyAnimation, pyqtProperty, pyqtSignal, Qt)
 import sys
 import random
@@ -149,6 +149,29 @@ class MessageDisplayer(QScrollArea):
         self.layout.addWidget(label)
         label.toggle_anim(True)
 
+class MessageInput(QWidget):
+    messageInputted = pyqtSignal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+
+        self.layout = QHBoxLayout(self)
+
+        self.prefix_label = QLabel('>', self)
+        self.msg_input = QLineEdit(self)
+
+        self.layout.addWidget(self.prefix_label)
+        self.layout.addWidget(self.msg_input)
+        self.msg_input.editingFinished.connect(self.send_message)
+
+        self.setStyleSheet("""
+                        border: 1px solid white;
+                        color: rgb(0, 255, 0);                        
+                        """)
+
+    def send_message(self):
+        self.messageInputted.emit(self.msg_input.text())
+        self.msg_input.clear()
 
 class AnimatedTextPrinter(QWidget):
     """
@@ -177,7 +200,7 @@ class AnimatedTextPrinter(QWidget):
         self.layout = QVBoxLayout(self)
         self.display = MessageDisplayer(speed, delay, parent=self)
         self.layout.addWidget(self.display)
-        self.msg_input = QLineEdit(self)
+        self.msg_input = MessageInput(self)
         self.layout.addWidget(self.msg_input)
         self.setGeometry(10, 10, 500, 300)
         self.parent = parent
@@ -186,18 +209,11 @@ class AnimatedTextPrinter(QWidget):
             self.display.insert_message(txt)
         self.show()
 
-        self.msg_input.editingFinished.connect(self.send_message)
         self.setStyleSheet("""
                         background-color: rgb(0, 0, 0);
                         """)
-        self.msg_input.setStyleSheet("""
-                        border: 1px solid white;
-                        color: rgb(0, 255, 0);                        
-                        """)
 
-    def send_message(self):
-        self.display.insert_message(self.msg_input.text())
-        self.msg_input.clear()
+        self.msg_input.messageInputted.connect(self.display.insert_message)
 
 
 class AnimatedFilePrinter(AnimatedTextPrinter):
