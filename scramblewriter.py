@@ -9,12 +9,9 @@ Start the demo by typing in console:
 python3 scramblewriter.py <filename> <speed> <delay>
 """
 
-#try:
 from PyQt5.Qt import QApplication
-from PyQt5.QtWidgets import (QLabel, QVBoxLayout, QWidget, QScrollArea, QLineEdit)
-from PyQt5.QtCore import (QAbstractAnimation, QPropertyAnimation, pyqtProperty, pyqtSignal)
-#except ImportError:
-#    raise ImportError('You might be missing PyQt5. Please install it')
+from PyQt5.QtWidgets import (QLabel, QVBoxLayout, QWidget, QScrollArea, QLineEdit, QSizePolicy)
+from PyQt5.QtCore import (QAbstractAnimation, QPropertyAnimation, pyqtProperty, pyqtSignal, Qt)
 import sys
 import random
 
@@ -110,12 +107,19 @@ class MessageLabel(QLabel):
         self.anim.start()
 
 
+class MessageContainer(QWidget):
+    sizeChanged = pyqtSignal(float)
+
+    def resizeEvent(self, event):
+        self.sizeChanged.emit(event.size().height())
+
+
 class MessageDisplayer(QScrollArea):
 
     def __init__(self, speed=20, delay=-1, parent=None):
         super().__init__(parent=parent)
 
-        self.displayer = QWidget()
+        self.displayer = MessageContainer()
 
         self.layout = QVBoxLayout(self.displayer)
 
@@ -127,14 +131,13 @@ class MessageDisplayer(QScrollArea):
         self.speed = speed
         self.delay = delay
 
+        self.displayer.sizeChanged.connect(self.verticalScrollBar().setSliderPosition)
+
     def insert_message(self, text):
         label = MessageLabel(text, speed=self.speed, delay=self.delay, parent=self)
         self.msg_labels.append(label)
         self.layout.addWidget(label)
         label.toggle_anim(True)
-
-    def scroll_to_end(self):
-        self.verticalScrollBar().setSliderPosition(self.display.height())
 
 
 class AnimatedTextPrinter(QWidget):
@@ -162,11 +165,7 @@ class AnimatedTextPrinter(QWidget):
         # Setup the widget
         super().__init__(parent=parent)
         self.layout = QVBoxLayout(self)
-        #self.scroll = QScrollArea(self)
         self.display = MessageDisplayer(speed, delay, parent=self)
-
-        #self.scroll.setWidget(self.display)
-        #self.scroll.setWidgetResizable(True)
         self.layout.addWidget(self.display)
         self.msg_input = QLineEdit(self)
         self.layout.addWidget(self.msg_input)
@@ -176,6 +175,12 @@ class AnimatedTextPrinter(QWidget):
         for txt in text.split('\n'):
             self.display.insert_message(txt)
         self.show()
+
+        self.msg_input.editingFinished.connect(self.send_message)
+
+    def send_message(self):
+        self.display.insert_message(self.msg_input.text())
+        self.msg_input.clear()
 
 
 class AnimatedFilePrinter(AnimatedTextPrinter):
