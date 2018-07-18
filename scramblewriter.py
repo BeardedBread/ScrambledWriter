@@ -1,12 +1,19 @@
 """
-This file contains the widget to animate the printing of a text with scrambled
+This file contains the program to animate the printing of an input text with scrambled
 garbage, similar to the text printing in the game N++ by Metanet.
 Credits to them for this cool effect.
 
 Requires pyqt5 and python3
 
 Start the demo by typing in console:
-python3 scramblewriter.py <filename> <speed> <delay>
+python3 scramblewriter.py <speed> <delay>
+
+Inputs
+------
+speed : int
+    The period at which a new character is printed.
+delay : int
+    The number of garbage to be printed before printing the actual text
 """
 
 from PyQt5.Qt import QApplication
@@ -17,9 +24,27 @@ import random
 
 
 class MessageLabel(QLabel):
-    textChanged = pyqtSignal()
+    """
+    QLabel that a message, which is displayed through animation.
+    """
 
     def __init__(self, text, speed=20, delay=-1, parent=None):
+        """
+        Does some text processing, and set up the animation to display the text
+
+        Parameters
+        ----------
+        text: str
+            Text to be displayed
+        speed : int
+            The period at which a new character is printed
+            The total time is calculated as length of text * speed
+            0 means instant display, like a regular QLabel.
+        delay : int
+            The number of garbage to be printed before printing the actual text
+        parent: QWidget
+            Pass into QLabel init method
+        """
         super().__init__(text, parent)
 
         self.setWordWrap(True)
@@ -56,7 +81,7 @@ class MessageLabel(QLabel):
     @pyqtProperty(int)
     def shown_length(self):
         """
-        # int : The value for the animation
+        int : The value for the animation
 
         When the value is set, the text to be printed is generated accordingly.
         It determines whether actual text is to be printed, and retains the
@@ -93,8 +118,6 @@ class MessageLabel(QLabel):
 
             self.setText(self.actual_text[:value - self.delay] + ''.join(garbage))
 
-        self.textChanged.emit()
-
     def toggle_anim(self, toggling):
         """
         Toggle the animation to be play forward or backward
@@ -113,22 +136,63 @@ class MessageLabel(QLabel):
 
 
 class MessageContainer(QWidget):
+    """
+    A container to display the messages.
+
+    Attributes
+    ----------
+    sizeChanged: pyqtSignal(float)
+        Emitted when it is resized. Sends its height value
+    """
     sizeChanged = pyqtSignal(float)
 
+    def __init__(self, parent=None):
+        """
+        Creates a layout for the message labels, which is vertical.
+
+        Parameters
+        ---------
+        parent : QWidget
+            Pass into QWidget init method
+        """
+        super().__init__(parent=parent)
+        self.layout = QVBoxLayout(self)
+        self.layout.setAlignment(Qt.AlignTop)
+        self.layout.setSpacing(0)
+
     def resizeEvent(self, event):
+        """
+        Reimplemented from QWidget resizeEvent method
+        """
         self.sizeChanged.emit(event.size().height())
+
+    def insert_label(self, label):
+        """
+        Insert a given QLabel into its layout
+        """
+        self.layout.addWidget(label)
 
 
 class MessageDisplayer(QScrollArea):
-
+    """
+    A scrolling Area to display all the messages.
+    """
     def __init__(self, speed=20, delay=-1, parent=None):
+        """
+        Create a container widget to display all the messages
+
+        Parameters
+        ----------
+        speed : int
+            Pass into MessageLabel
+        delay : int
+            Pass into MessageLabel
+        parent : QWidget
+            Pass into QScrollArea init method
+        """
         super().__init__(parent=parent)
 
         self.displayer = MessageContainer()
-
-        self.layout = QVBoxLayout(self.displayer)
-        self.layout.setAlignment(Qt.AlignTop)
-        self.layout.setSpacing(0)
 
         self.setWidget(self.displayer)
         self.setWidgetResizable(True)
@@ -142,19 +206,43 @@ class MessageDisplayer(QScrollArea):
                         """)
 
     def insert_message(self, text):
+        """
+        Creates a MessageLabel, passing the relevant arguments, and insert into container.
+
+        Parameters
+        ----------
+        text : str
+            The message to be displayed
+        """
         label = MessageLabel(text, speed=self.speed, delay=self.delay, parent=self)
-        self.layout.addWidget(label)
+        self.displayer.insert_label(label)
         label.toggle_anim(True)
 
+
 class MessageInput(QWidget):
+    """
+    Widget to receive user input messages
+
+    Attributes
+    ----------
+    messageInputted : pyqtSignal(str)
+    Emitted when it receives an input message. Sends the inputted message.
+    """
     messageInputted = pyqtSignal(str)
 
     def __init__(self, parent=None):
+        """
+        Create a widget containing widgets to display the messages and to allow message inputs.
+
+        Parameters
+        ----------
+        parent : QWidget
+        Passed into QWidget init function
+        """
         super().__init__(parent=parent)
 
         self.layout = QHBoxLayout(self)
         self.layout.setSpacing(0)
-
         self.prefix_label = QLabel('>', self)
         self.msg_input = QLineEdit(self)
 
@@ -168,30 +256,30 @@ class MessageInput(QWidget):
                         """)
 
     def send_message(self):
+        """
+        Sends the inputted message and clear itself
+        """
         self.messageInputted.emit(self.msg_input.text())
         self.msg_input.clear()
 
+
 class AnimatedTextPrinter(QWidget):
     """
-    Widget to gradually print text with scrambled garbage.
+    The Main Program to animated an input message
     """
 
-    def __init__(self, text, speed=20, delay=-1, parent=None):
+    def __init__(self, speed=20, delay=-1, parent=None):
         """
-        Create a widget containing a QLabel, which displays the text.
-        Process the text and set up the QPropertyAnimation
-        as well to animate the printing.
+        Create a widget containing widgets to display the messages and to allow message inputs.
 
         Parameters
         ----------
-        text : str
-            The text to print
         speed : int
-            The period at which a new character is printed
-            The total time is calculated as length of text * speed
-            0 means instant display, like a regular QLabel.
+            Pass into MessageDisplayer
         delay : int
-            The number of garbage to be printed before printing the actual text
+            Pass into MessageDisplayer
+        parent : QWidget
+            Pass into QWidget init method
         """
         # Setup the widget
         super().__init__(parent=parent)
@@ -203,33 +291,12 @@ class AnimatedTextPrinter(QWidget):
         self.setGeometry(10, 10, 500, 300)
         self.parent = parent
 
-        for txt in text.split('\n'):
-            self.display.insert_message(txt)
-        self.show()
-
         self.setStyleSheet("""
                         background-color: rgb(0, 0, 0);
                         """)
 
         self.msg_input.messageInputted.connect(self.display.insert_message)
-
-
-class AnimatedFilePrinter(AnimatedTextPrinter):
-    """
-    A class to print text from file
-    """
-    def __init__(self, filename, speed=20, delay=-1, parent=None):
-        """
-        Similar to AnimatedText, but with an option to pass text file
-
-        Parameters
-        ----------
-        file : str
-            Directory of the text file to be read
-        """
-        with open(filename, 'r') as f:
-            text = f.read()
-        super().__init__(text.strip('\n'), speed=speed, delay=delay, parent=parent)
+        self.show()
 
 
 if __name__ == "__main__":
@@ -246,5 +313,5 @@ if __name__ == "__main__":
     print('Speed Per Char: {:s}ms\nNumber of Garbage: {:s}'.format(*input_param[1:]))
 
     # Create the animated printer and start the animation
-    writer = AnimatedTextPrinter("Welcome to the printer", speed=int(input_param[1]), delay=int(input_param[2]))
+    writer = AnimatedTextPrinter(speed=int(input_param[1]), delay=int(input_param[2]))
     sys.exit(app.exec_())
