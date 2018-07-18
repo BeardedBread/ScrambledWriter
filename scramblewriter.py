@@ -23,6 +23,7 @@ class MessageLabel(QLabel):
         super().__init__(text, parent)
 
         self.setWordWrap(True)
+        self.setContentsMargins(0, 0, 0, 0)
         # Text processing
         # Make sure the garbage does not exceed the length of actual text
         self.actual_text = text
@@ -47,6 +48,10 @@ class MessageLabel(QLabel):
         self.anim.setDuration(len(self.actual_text) * speed)
         self.anim.setStartValue(0)
         self.anim.setEndValue(len(self.actual_text) + self.delay)
+
+        self.setStyleSheet("""
+                    color: rgb(0, 255, 0);
+                """)
 
     @pyqtProperty(int)
     def shown_length(self):
@@ -122,6 +127,8 @@ class MessageDisplayer(QScrollArea):
         self.displayer = MessageContainer()
 
         self.layout = QVBoxLayout(self.displayer)
+        self.layout.setAlignment(Qt.AlignTop)
+        self.layout.setSpacing(0)
 
         self.setWidget(self.displayer)
         self.setWidgetResizable(True)
@@ -132,6 +139,9 @@ class MessageDisplayer(QScrollArea):
         self.delay = delay
 
         self.displayer.sizeChanged.connect(self.verticalScrollBar().setSliderPosition)
+        self.setStyleSheet("""
+                        background-color: rgb(0, 0, 0);
+                        """)
 
     def insert_message(self, text):
         label = MessageLabel(text, speed=self.speed, delay=self.delay, parent=self)
@@ -177,6 +187,13 @@ class AnimatedTextPrinter(QWidget):
         self.show()
 
         self.msg_input.editingFinished.connect(self.send_message)
+        self.setStyleSheet("""
+                        background-color: rgb(0, 0, 0);
+                        """)
+        self.msg_input.setStyleSheet("""
+                        border: 1px solid white;
+                        color: rgb(0, 255, 0);                        
+                        """)
 
     def send_message(self):
         self.display.insert_message(self.msg_input.text())
