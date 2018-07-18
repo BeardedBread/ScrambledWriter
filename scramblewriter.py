@@ -22,6 +22,10 @@ from PyQt5.QtCore import (QAbstractAnimation, QPropertyAnimation, pyqtProperty, 
 import sys
 import random
 
+WELCOME_MESSAGE = '''Welcome to a proof of concept v0.0. 
+Type something and press Enter to see your message printed just like this.
+'''
+
 
 class MessageLabel(QLabel):
     """
@@ -205,6 +209,8 @@ class MessageDisplayer(QScrollArea):
                         background-color: rgb(0, 0, 0);
                         """)
 
+        self.insert_message(WELCOME_MESSAGE)
+
     def insert_message(self, text):
         """
         Creates a MessageLabel, passing the relevant arguments, and insert into container.
@@ -245,6 +251,7 @@ class MessageInput(QWidget):
         self.layout.setSpacing(0)
         self.prefix_label = QLabel('>', self)
         self.msg_input = QLineEdit(self)
+        self.msg_input.setPlaceholderText("Enter a message")
 
         self.layout.addWidget(self.prefix_label)
         self.layout.addWidget(self.msg_input)
